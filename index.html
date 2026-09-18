@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Finanzas Exprés & MSI</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2382/2382461.png">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --card-bg: #161b22;
+      --border-color: #30363d;
+      --text-main: #f0f6fc;
+      --text-sub: #8b949e;
+      --primary: #1f6feb;
+      --income-green: #238636;
+      --expense-red: #da3633;
+      --accent-msi: #d29922;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: 90px;
+    }
+
+    /* Cards UI */
+    .balance-card {
+      background: linear-gradient(135deg, #1f6feb 0%, #11428f 100%);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .balance-title {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.8);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-amount {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin: 8px 0;
+    }
+
+    .balance-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .stat-val.income { color: #7ee787; }
+    .stat-val.expense { color: #ff7b72; }
+
+    .msi-banner {
+      background: rgba(210, 153, 34, 0.1);
+      border: 1px solid var(--accent-msi);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .msi-info h4 {
+      color: var(--accent-msi);
+      font-size: 0.9rem;
+    }
+
+    .msi-info p {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .btn-quick {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tx-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 12px 16px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tx-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tx-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tx-icon.expense { background: rgba(218, 54, 51, 0.15); color: #f85149; }
+    .tx-icon.income { background: rgba(35, 134, 54, 0.15); color: #3fb950; }
+    .tx-icon.msi { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+
+    .tx-title { font-weight: 600; font-size: 0.95rem; }
+    .tx-sub { font-size: 0.75rem; color: var(--text-sub); }
+
+    .tx-amount { font-weight: 700; font-size: 1rem; }
+    .tx-amount.expense { color: #f85149; }
+    .tx-amount.income { color: #3fb950; }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-sub);
+      font-size: 0.7rem;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-item.active { color: var(--primary); }
+
+    /* FAB Button */
+    .fab {
+      position: fixed;
+      bottom: 25px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(31, 111, 235, 0.5);
+      border: none;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    /* Modal Keypad */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-content {
+      background: var(--card-bg);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 24px;
+      border-top: 1px solid var(--border-color);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .type-toggle {
+      display: flex;
+      background: var(--bg-dark);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-sub);
+    }
+
+    .toggle-btn.active-expense { background: var(--expense-red); color: white; }
+    .toggle-btn.active-income { background: var(--income-green); color: white; }
+    .toggle-btn.active-msi { background: var(--accent-msi); color: white; }
+
+    .keypad-display {
+      font-size: 2.8rem;
+      font-weight: 800;
+      text-align: right;
+      padding: 12px 0;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-main);
+      margin-bottom: 12px;
+      font-size: 1rem;
+    }
+
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .key-btn {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .key-btn:active { background: var(--border-color); }
+
+    .save-btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Control Financiero PWA</h1>
+    <i data-lucide="bell" style="color: var(--text-sub); width:20px;"></i>
+  </div>
+
+  <div class="main-content">
+    
+    <!-- Balance Header Card -->
+    <div class="balance-card">
+      <div class="balance-title">Disponible Real</div>
+      <div class="balance-amount" id="totalBalance">$0.00</div>
+      <div class="balance-stats">
+        <div class="stat-item">
+          <span class="stat-label">Ingresos Mes</span>
+          <span class="stat-val income" id="monthIncome">+$0.00</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Gastos + MSI</span>
+          <span class="stat-val expense" id="monthExpense">-$0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active MSI Banner -->
+    <div class="msi-banner">
+      <div class="msi-info">
+        <h4>Compromisos a MSI</h4>
+        <p id="msiSummary">Cuotas activas este mes</p>
+      </div>
+      <i data-lucide="credit-card" style="color: var(--accent-msi)"></i>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="btn-quick" onclick="openModal('GASTO')">
+        <i data-lucide="arrow-up-right" style="color: #f85149"></i> Gasto
+      </button>
+      <button class="btn-quick" onclick="openModal('INGRESO')">
+        <i data-lucide="arrow-down-left" style="color: #3fb950"></i> Ingreso
+      </button>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="section-title">Movimientos Recientes</div>
+    <div class="tx-list" id="txContainer">
+      <!-- Items populated by JS -->
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <i data-lucide="home"></i>
+      <span>Inicio</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="calendar"></i>
+      <span>MSI</span>
+    </div>
+    <div class="nav-item">
+      <i data-lucide="pie-chart"></i>
+      <span>Reportes</span>
+    </div>
+  </div>
+
+  <!-- Floating Add Button -->
+  <button class="fab" onclick="openModal('GASTO')">
+    <i data-lucide="plus" style="width: 28px; height: 28px;"></i>
+  </button>
+
+  <!-- Captura / Keypad Modal -->
+  <div class="modal" id="txModal">
+    <div class="modal-content">
+      
+      <div class="type-toggle">
+        <div class="toggle-btn active-expense" id="btnTypeExpense" onclick="setType('GASTO')">Gasto</div>
+        <div class="toggle-btn" id="btnTypeIncome" onclick="setType('INGRESO')">Ingreso</div>
+        <div class="toggle-btn" id="btnTypeMSI" onclick="setType('MSI')">MSI</div>
+      </div>
+
+      <div class="keypad-display" id="displayAmount">$0</div>
+
+      <input type="text" class="input-field" id="txConcept" placeholder="Concepto (ej. Supermercado, Nomina)">
+      
+      <select class="input-field" id="txCategory">
+        <option value="Comida">Comida / Super</option>
+        <option value="Transporte">Transporte / Gasolina</option>
+        <option value="Sueldo">Sueldo / Nómina</option>
+        <option value="Servicios">Servicios / Casa</option>
+        <option value="Otros">Otros</option>
+      </select>
+
+      <div id="msiOptions" style="display: none;">
+        <label style="font-size: 0.8rem; color: var(--text-sub);">Plazo en Meses:</label>
+        <select class="input-field" id="txMonths">
+          <option value="3">3 Meses Sin Intereses</option>
+          <option value="6">6 Meses Sin Intereses</option>
+          <option value="12" selected>12 Meses Sin Intereses</option>
+          <option value="18">18 Meses Sin Intereses</option>
+        </select>
+      </div>
+
+      <div class="keypad-grid">
+        <button class="key-btn" onclick="pressKey('1')">1</button>
+        <button class="key-btn" onclick="pressKey('2')">2</button>
+        <button class="key-btn" onclick="pressKey('3')">3</button>
+        <button class="key-btn" onclick="pressKey('4')">4</button>
+        <button class="key-btn" onclick="pressKey('5')">5</button>
+        <button class="key-btn" onclick="pressKey('6')">6</button>
+        <button class="key-btn" onclick="pressKey('7')">7</button>
+        <button class="key-btn" onclick="pressKey('8')">8</button>
+        <button class="key-btn" onclick="pressKey('9')">9</button>
+        <button class="key-btn" onclick="pressKey('.')">.</button>
+        <button class="key-btn" onclick="pressKey('0')">0</button>
+        <button class="key-btn" onclick="pressKey('DEL')">⌫</button>
+      </div>
+
+      <button class="save-btn" onclick="saveTransaction()">Guardar Movimiento</button>
+    </div>
+  </div>
+
+  <script>
+    // App State
+    let currentType = 'GASTO';
+    let currentInput = '0';
+    let transactions = JSON.parse(localStorage.getItem('fin_txs')) || [
+      { id: 1, type: 'INGRESO', concept: 'Pago Nómina', amount: 25000, category: 'Sueldo', date: '2026-09-15' },
+      { id: 2, type: 'GASTO', concept: 'Supermercado', amount: 1450, category: 'Comida', date: '2026-09-16' },
+      { id: 3, type: 'MSI', concept: 'Laptop Oficina', amount: 12000, months: 12, monthly: 1000, category: 'Otros', date: '2026-09-01' }
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      updateUI();
+      registerSW();
+    });
+
+    function registerSW() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration error:', err));
+      }
+    }
+
+    function openModal(type) {
+      currentInput = '0';
+      setType(type);
+      document.getElementById('txConcept').value = '';
+      document.getElementById('txModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('txModal').classList.remove('open');
+    }
+
+    function setType(type) {
+      currentType = type;
+      document.getElementById('btnTypeExpense').className = 'toggle-btn' + (type==='GASTO'?' active-expense':'');
+      document.getElementById('btnTypeIncome').className = 'toggle-btn' + (type==='INGRESO'?' active-income':'');
+      document.getElementById('btnTypeMSI').className = 'toggle-btn' + (type==='MSI'?' active-msi':'');
+      
+      document.getElementById('msiOptions').style.display = type === 'MSI' ? 'block' : 'none';
+      updateDisplay();
+    }
+
+    function pressKey(val) {
+      if (val === 'DEL') {
+        currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
+      } else if (val === '.') {
+        if (!currentInput.includes('.')) currentInput += '.';
+      } else {
+        currentInput = currentInput === '0' ? val : currentInput + val;
+      }
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      document.getElementById('displayAmount').innerText = '$' + currentInput;
+    }
+
+    function saveTransaction() {
+      const amount = parseFloat(currentInput);
+      const concept = document.getElementById('txConcept').value || (currentType === 'INGRESO' ? 'Ingreso Varios' : 'Gasto Varios');
+      const category = document.getElementById('txCategory').value;
+
+      if (!amount || amount <= 0) return alert('Ingresa un monto válido');
+
+      const newTx = {
+        id: Date.now(),
+        type: currentType,
+        concept,
+        amount,
+        category,
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      if (currentType === 'MSI') {
+        newTx.months = parseInt(document.getElementById('txMonths').value);
+        newTx.monthly = amount / newTx.months;
+      }
+
+      transactions.unshift(newTx);
+      localStorage.setItem('fin_txs', JSON.stringify(transactions));
+      
+      closeModal();
+      updateUI();
+    }
+
+    function updateUI() {
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let msiMonthlyTotal = 0;
+
+      const txContainer = document.getElementById('txContainer');
+      txContainer.innerHTML = '';
+
+      transactions.forEach(tx => {
+        if (tx.type === 'INGRESO') totalIncome += tx.amount;
+        if (tx.type === 'GASTO') totalExpense += tx.amount;
+        if (tx.type === 'MSI') {
+          msiMonthlyTotal += tx.monthly;
+          totalExpense += tx.monthly; // Impacto mensual del MSI
+        }
+
+        // Render Tx Item
+        const item = document.createElement('div');
+        item.className = 'tx-item';
+        
+        let iconName = tx.type === 'INGRESO' ? 'arrow-down-left' : (tx.type === 'MSI' ? 'credit-card' : 'arrow-up-right');
+        let typeClass = tx.type.toLowerCase();
+
+        item.innerHTML = `
+          <div class="tx-details">
+            <div class="tx-icon ${typeClass}">
+              <i data-lucide="${iconName}"></i>
+            </div>
+            <div>
+              <div class="tx-title">${tx.concept}</div>
+              <div class="tx-sub">${tx.category} • ${tx.date} ${tx.type === 'MSI' ? `(${tx.months} MSI)` : ''}</div>
+            </div>
+          </div>
+          <div class="tx-amount ${typeClass}">
+            ${tx.type === 'INGRESO' ? '+' : '-'}$${(tx.type === 'MSI' ? tx.monthly : tx.amount).toLocaleString()}
+          </div>
+        `;
+        txContainer.appendChild(item);
+      });
+
+      document.getElementById('totalBalance').innerText = '$' + (totalIncome - totalExpense).toLocaleString('es-MX', {minimumFractionDigits: 2});
+      document.getElementById('monthIncome').innerText = '+$' + totalIncome.toLocaleString();
+      document.getElementById('monthExpense').innerText = '-$' + totalExpense.toLocaleString();
+      document.getElementById('msiSummary').innerText = `Mensualidad total MSI: $${msiMonthlyTotal.toLocaleString()}/mes`;
+
+      lucide.createIcons();
+    }
+
+    // Modal Close Outside Click
+    window.onclick = function(event) {
+      const modal = document.getElementById('txModal');
+      if (event.target == modal) closeModal();
+    }
+  </script>
+</body>
+</html>
