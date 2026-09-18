@@ -4,12 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control Financiero Familiar</title>
-  <!-- PWA Manifest & Colors -->
   <meta name="theme-color" content="#2563eb">
   <link rel="manifest" href="manifest.json">
-  <!-- Tailwind CSS & Supabase JS SDK -->
+  <!-- Tailwind CSS & Supabase JS SDK (Versión Estable) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     body { -webkit-tap-highlight-color: transparent; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -18,15 +17,21 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans pb-20 antialiased">
 
-  <!-- PANTALLA DE AUTENTICACIÓN (LOGIN / REGISTRO / RECUPERACIÓN) -->
+  <!-- PANTALLA DE AUTENTICACIÓN -->
   <div id="auth-screen" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md relative">
+      
+      <!-- BOTÓN REGRESAR EN AUTH -->
+      <button id="btn-back-auth" onclick="setAuthMode('login')" class="hidden text-xs font-semibold text-gray-500 hover:text-blue-600 mb-4 flex items-center gap-1">
+        ← Regresar al inicio de sesión
+      </button>
+
       <div class="text-center mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Control Financiero</h1>
         <p class="text-sm text-gray-500" id="auth-subtitle">Inicia sesión en tu cuenta</p>
       </div>
 
-      <!-- FORMULARIO AUTENTICACIÓN -->
+      <!-- FORMULARIO -->
       <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
@@ -42,20 +47,19 @@
         </button>
       </form>
 
-      <!-- BOTONES DE NAVEGACIÓN DE AUTENTICACIÓN -->
-      <div class="mt-4 text-center text-sm space-y-2">
-        <button id="toggle-auth-mode-btn" onclick="toggleAuthMode()" class="text-blue-600 hover:underline">
+      <!-- OPCIONES -->
+      <div id="auth-links" class="mt-4 text-center text-sm space-y-2">
+        <button id="toggle-auth-mode-btn" onclick="setAuthMode('signup')" class="text-blue-600 hover:underline block w-full">
           ¿No tienes cuenta? Regístrate
         </button>
-        <br>
-        <button id="toggle-reset-btn" onclick="toggleResetMode()" class="text-gray-500 hover:underline">
+        <button id="toggle-reset-btn" onclick="setAuthMode('reset')" class="text-gray-500 hover:underline text-xs block w-full">
           ¿Olvidaste tu contraseña?
         </button>
       </div>
     </div>
   </div>
 
-  <!-- APLICACIÓN PRINCIPAL (OCULTA HASTA AUTENTICARSE) -->
+  <!-- APLICACIÓN PRINCIPAL -->
   <div id="app" class="hidden">
     <!-- ENCABEZADO -->
     <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-30 flex justify-between items-center">
@@ -68,12 +72,10 @@
       </button>
     </header>
 
-    <!-- NAVEGACIÓN POR PESTAÑAS -->
     <main class="max-w-md mx-auto p-4 space-y-4">
 
-      <!-- PESTAÑA: REGISTRO / MOVIMIENTOS -->
+      <!-- PESTAÑA: MOVIMIENTOS -->
       <div id="tab-registro" class="tab-content space-y-4">
-        <!-- Tarjeta de Saldo General -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
           <div>
             <p class="text-xs text-gray-500 font-medium">Balance del Mes Actual</p>
@@ -85,7 +87,6 @@
           </div>
         </div>
 
-        <!-- Botones de Acción Rápida -->
         <div class="grid grid-cols-2 gap-3">
           <button onclick="openModal('ingreso')" class="bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-sm transition flex justify-center items-center gap-2">
             <span>+</span> Agregar Ingreso
@@ -95,36 +96,34 @@
           </button>
         </div>
 
-        <!-- Lista de Movimientos Recientes -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <h2 class="font-bold text-gray-800 text-sm mb-3">Movimientos Recientes</h2>
           <div id="transactions-list" class="space-y-3">
-            <p class="text-xs text-gray-400 text-center py-4">Cargando datos...</p>
+            <p class="text-xs text-gray-400 text-center py-4">Sin registros aún.</p>
           </div>
         </div>
       </div>
 
-      <!-- PESTAÑA: RESUMEN MENSUAL Y PROYECCIÓN -->
+      <!-- PESTAÑA: RESUMEN MENSUAL -->
       <div id="tab-resumen" class="tab-content hidden space-y-4">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div class="flex justify-between items-center mb-4">
             <h2 class="font-bold text-gray-800">Resumen Mensual</h2>
             <select id="select-month" onchange="renderSummary()" class="text-sm border border-gray-300 rounded-lg p-1">
-              <!-- Opciones generadas por JS -->
             </select>
           </div>
 
           <div class="space-y-3">
             <div class="flex justify-between border-b pb-2 text-sm">
-              <span class="text-gray-600">Ingresos Registrados:</span>
+              <span class="text-gray-600">Ingresos Totales:</span>
               <span id="summary-income" class="font-bold text-green-600">$0.00</span>
             </div>
             <div class="flex justify-between border-b pb-2 text-sm">
-              <span class="text-gray-600">Gastos Corrientes:</span>
+              <span class="text-gray-600">Gastos Directos:</span>
               <span id="summary-direct-expenses" class="font-bold text-red-500">$0.00</span>
             </div>
             <div class="flex justify-between border-b pb-2 text-sm">
-              <span class="text-gray-600">Cuotas de Meses Sin Intereses:</span>
+              <span class="text-gray-600">Cuotas MSI del Mes:</span>
               <span id="summary-msi-expenses" class="font-bold text-amber-600">$0.00</span>
             </div>
             <div class="flex justify-between pt-1 text-base font-bold">
@@ -133,41 +132,31 @@
             </div>
           </div>
         </div>
-
-        <!-- Desglose MSI Activos -->
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 class="font-bold text-gray-800 text-sm mb-3">Compras a Meses Activas</h3>
-          <div id="msi-list" class="space-y-2">
-            <p class="text-xs text-gray-400 text-center py-2">No hay cargos a meses registrados.</p>
-          </div>
-        </div>
       </div>
 
-      <!-- PESTAÑA: TARJETAS Y MÉTODOS DE PAGO -->
+      <!-- PESTAÑA: TARJETAS -->
       <div id="tab-tarjetas" class="tab-content hidden space-y-4">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h2 class="font-bold text-gray-800 text-sm mb-3">Agregar Tarjeta</h2>
+          <h2 class="font-bold text-gray-800 text-sm mb-3">Agregar Método de Pago</h2>
           <form onsubmit="addCard(event)" class="space-y-3">
-            <input type="text" id="card-name" placeholder="Nombre (Ej. BBVA Azul, Nu)" required class="w-full text-sm border p-2 rounded-lg">
+            <input type="text" id="card-name" placeholder="Ej. BBVA, Nu, Efectivo extra" required class="w-full text-sm border p-2 rounded-lg">
             <select id="card-type" class="w-full text-sm border p-2 rounded-lg">
               <option value="Credito">Tarjeta de Crédito</option>
-              <option value="Debito">Tarjeta de Débito</option>
+              <option value="Debito">Tarjeta de Débito / Cuenta</option>
             </select>
-            <button type="submit" class="w-full bg-blue-600 text-white text-sm py-2 rounded-lg font-semibold">Guardar Tarjeta</button>
+            <button type="submit" class="w-full bg-blue-600 text-white text-sm py-2 rounded-lg font-semibold">Guardar Método</button>
           </form>
         </div>
 
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 class="font-bold text-gray-800 text-sm mb-3">Tus Tarjetas</h3>
-          <div id="cards-list" class="space-y-2">
-            <p class="text-xs text-gray-400 text-center py-2">Solo Efectivo registrado por defecto.</p>
-          </div>
+          <h3 class="font-bold text-gray-800 text-sm mb-3">Tus Tarjetas y Cuentas</h3>
+          <div id="cards-list" class="space-y-2"></div>
         </div>
       </div>
 
     </main>
 
-    <!-- BARRA INFERIOR DE NAVEGACIÓN -->
+    <!-- NAVEGACIÓN INFERIOR -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-30">
       <button onclick="switchTab('registro')" class="text-center text-blue-600 font-medium text-xs flex flex-col items-center">
         <span>📝</span> Movimientos
@@ -181,17 +170,24 @@
     </nav>
   </div>
 
-  <!-- MODAL: REGISTRO DE MOVIMIENTO (GASTO O INGRESO) -->
+  <!-- MODAL: REGISTRO DE GASTO / INGRESO -->
   <div id="modal-transaction" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md space-y-4">
-      <h3 id="modal-title" class="font-bold text-lg text-gray-800">Registrar Movimiento</h3>
+      
+      <!-- BOTÓN REGRESAR / CERRAR MODAL -->
+      <div class="flex justify-between items-center border-b pb-2">
+        <button type="button" onclick="closeModal()" class="text-xs font-semibold text-gray-500 hover:text-gray-800">
+          ← Regresar
+        </button>
+        <h3 id="modal-title" class="font-bold text-base text-gray-800">Registrar Movimiento</h3>
+      </div>
 
       <form onsubmit="saveTransaction(event)" class="space-y-3">
         <input type="hidden" id="tx-type" value="gasto">
 
         <div>
           <label class="block text-xs font-semibold text-gray-600">Concepto</label>
-          <input type="text" id="tx-concept" placeholder="Ej. Despensa, Sueldo, Gasolina" required class="w-full border p-2 rounded-lg text-sm">
+          <input type="text" id="tx-concept" placeholder="Ej. Despensa, Sueldo" required class="w-full border p-2 rounded-lg text-sm">
         </div>
 
         <div>
@@ -201,9 +197,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-gray-600">Categoría</label>
-          <select id="tx-category" class="w-full border p-2 rounded-lg text-sm">
-            <!-- Dinámico según tipo -->
-          </select>
+          <select id="tx-category" class="w-full border p-2 rounded-lg text-sm"></select>
         </div>
 
         <div>
@@ -213,10 +207,9 @@
           </select>
         </div>
 
-        <!-- OPCIONES MESES SIN INTERESES (SOLO GASTOS) -->
         <div id="msi-container" class="space-y-2 border-t pt-2">
           <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
-            <input type="checkbox" id="tx-is-msi" onchange="toggleMSIOptions()"> ¿Es una compra a Meses Sin Intereses (MSI)?
+            <input type="checkbox" id="tx-is-msi" onchange="toggleMSIOptions()"> ¿Es una compra a Meses Sin Intereses?
           </label>
 
           <div id="msi-details" class="hidden space-y-2 pl-4">
@@ -231,10 +224,6 @@
                 <option value="24">24 Meses</option>
               </select>
             </div>
-            <div>
-              <label class="block text-xs text-gray-500">¿Inició en meses pasados? (Pagos ya realizados)</label>
-              <input type="number" id="tx-msi-past" value="0" min="0" class="w-full border p-1.5 rounded-lg text-sm" placeholder="Ej. 2 cuotas pagadas">
-            </div>
           </div>
         </div>
 
@@ -246,34 +235,32 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGIC -->
   <script>
-    // -------------------------------------------------------------
-    // 1. CONFIGURACIÓN DE SUPABASE (REEMPLAZAR CON TUS CLAVES REALES)
-    // -------------------------------------------------------------
-    const SUPABASE_URL = "https://prvkyaceeviqyyfehxfy.supabase.co/rest/v1/";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydmt5YWNlZXZpcXl5ZmVoeGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzAwMDQsImV4cCI6MjEwNTMwNjAwNH0.coBp9PVYGlYdOryOcBzCjRO3omoNSZHz9rRXDD0TuIo";
+    // CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = "https://prvkyaceeviqyyfehxfy.supabase.co/rest/v1/"; // Sin /rest/v1
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydmt5YWNlZXZpcXl5ZmVoeGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzAwMDQsImV4cCI6MjEwNTMwNjAwNH0.coBp9PVYGlYdOryOcBzCjRO3omoNSZHz9rRXDD0TuIo"; // Tu clave eyJ...
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Estado Local
+    let supabaseClient;
     let currentUser = null;
-    let authState = 'login'; // 'login', 'signup', 'reset'
+    let authState = 'login';
     let transactions = [];
     let customCards = JSON.parse(localStorage.getItem('cards') || '[]');
 
     const CATEGORIES = {
       gasto: ['Comida/Super', 'Transporte/Gasolina', 'Servicios/Casa', 'Entretenimiento', 'Salud/Medicina', 'Educación', 'Ropa/Personal', 'Suscripciones', 'Otros'],
-      ingreso: ['Sueldo/Nómina', 'Ventas/Negocio', 'Inversiones/Rendimientos', 'Freelance/Trabajo Extra', 'Transferencia', 'Regalo/Premio', 'Otros']
+      ingreso: ['Sueldo/Nómina', 'Ventas/Negocio', 'Inversiones', 'Freelance', 'Transferencia', 'Regalo', 'Otros']
     };
 
-    // -------------------------------------------------------------
-    // 2. INICIALIZACIÓN Y CONTROL DE AUTENTICACIÓN
-    // -------------------------------------------------------------
     window.addEventListener('DOMContentLoaded', async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        setSessionUser(session.user);
+      // Inicialización segura del cliente Supabase
+      if (typeof supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          setSessionUser(session.user);
+        }
+      } else {
+        alert('Error cargando la librería de Supabase. Revisa tu conexión.');
       }
       populateMonthDropdown();
       updatePaymentDropdowns();
@@ -285,6 +272,35 @@
       document.getElementById('app').classList.remove('hidden');
       document.getElementById('user-display').innerText = user.email;
       loadTransactions();
+    }
+
+    function setAuthMode(mode) {
+      authState = mode;
+      const subtitle = document.getElementById('auth-subtitle');
+      const submitBtn = document.getElementById('auth-btn-submit');
+      const backBtn = document.getElementById('btn-back-auth');
+      const links = document.getElementById('auth-links');
+      const passGroup = document.getElementById('password-group');
+
+      if (mode === 'login') {
+        subtitle.innerText = 'Inicia sesión en tu cuenta';
+        submitBtn.innerText = 'Iniciar Sesión';
+        backBtn.classList.add('hidden');
+        links.classList.remove('hidden');
+        passGroup.classList.remove('hidden');
+      } else if (mode === 'signup') {
+        subtitle.innerText = 'Crea una cuenta nueva';
+        submitBtn.innerText = 'Registrarse';
+        backBtn.classList.remove('hidden');
+        links.classList.add('hidden');
+        passGroup.classList.remove('hidden');
+      } else if (mode === 'reset') {
+        subtitle.innerText = 'Recuperar Contraseña';
+        submitBtn.innerText = 'Enviar Enlace';
+        backBtn.classList.remove('hidden');
+        links.classList.add('hidden');
+        passGroup.classList.add('hidden');
+      }
     }
 
     async function handleAuth(e) {
@@ -300,32 +316,17 @@
         } else if (authState === 'signup') {
           const { data, error } = await supabaseClient.auth.signUp({ email, password });
           if (error) throw error;
-          alert('Cuenta creada exitosamente.');
-          if (data.user) setSessionUser(data.user);
+          alert('Cuenta registrada. Ya puedes ingresar.');
+          setAuthMode('login');
         } else if (authState === 'reset') {
           const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
           if (error) throw error;
-          alert('Se ha enviado un correo de recuperación.');
-          toggleAuthMode('login');
+          alert('Correo de recuperación enviado.');
+          setAuthMode('login');
         }
       } catch (err) {
         alert('Error: ' + err.message);
       }
-    }
-
-    function toggleAuthMode() {
-      authState = (authState === 'login') ? 'signup' : 'login';
-      document.getElementById('auth-subtitle').innerText = authState === 'signup' ? 'Crea una cuenta nueva' : 'Inicia sesión en tu cuenta';
-      document.getElementById('auth-btn-submit').innerText = authState === 'signup' ? 'Registrarse' : 'Iniciar Sesión';
-      document.getElementById('toggle-auth-mode-btn').innerText = authState === 'signup' ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
-      document.getElementById('password-group').classList.remove('hidden');
-    }
-
-    function toggleResetMode() {
-      authState = 'reset';
-      document.getElementById('auth-subtitle').innerText = 'Recuperar Contraseña';
-      document.getElementById('auth-btn-submit').innerText = 'Enviar Enlace';
-      document.getElementById('password-group').classList.add('hidden');
     }
 
     async function logout() {
@@ -333,20 +334,13 @@
       location.reload();
     }
 
-    // -------------------------------------------------------------
-    // 3. CARGA Y GUARDADO DE DATOS (SUPABASE)
-    // -------------------------------------------------------------
     async function loadTransactions() {
       const { data, error } = await supabaseClient
         .from('movimientos')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error al cargar movimientos:", error);
-        return;
-      }
-
+      if (error) return console.error(error);
       transactions = data || [];
       renderUI();
     }
@@ -373,22 +367,15 @@
       };
 
       const { error } = await supabaseClient.from('movimientos').insert([payload]);
-      if (error) {
-        alert('Error al guardar: ' + error.message);
-        return;
-      }
+      if (error) return alert('Error al guardar: ' + error.message);
 
       closeModal();
       loadTransactions();
     }
 
-    // -------------------------------------------------------------
-    // 4. INTERFAZ Y RENDERIZADO
-    // -------------------------------------------------------------
     function renderUI() {
       const list = document.getElementById('transactions-list');
       list.innerHTML = '';
-
       let inc = 0, exp = 0;
 
       transactions.forEach(t => {
@@ -412,14 +399,11 @@
       document.getElementById('total-income').innerText = `$${inc.toFixed(2)}`;
       document.getElementById('total-expense').innerText = `$${exp.toFixed(2)}`;
       document.getElementById('total-balance').innerText = `$${(inc - exp).toFixed(2)}`;
-
       renderSummary();
     }
 
     function renderSummary() {
-      const monthIndex = parseInt(document.getElementById('select-month').value || '0');
       let inc = 0, directExp = 0, msiExp = 0;
-
       transactions.forEach(t => {
         if (t.tipo === 'ingreso') inc += parseFloat(t.monto);
         if (t.tipo === 'gasto') {
@@ -437,48 +421,36 @@
       document.getElementById('summary-net-balance').innerText = `$${(inc - directExp - msiExp).toFixed(2)}`;
     }
 
-    // -------------------------------------------------------------
-    // 5. TARJETAS Y MODALES
-    // -------------------------------------------------------------
     function addCard(e) {
       e.preventDefault();
       const name = document.getElementById('card-name').value;
       const type = document.getElementById('card-type').value;
-
       customCards.push({ name, type });
       localStorage.setItem('cards', JSON.stringify(customCards));
       document.getElementById('card-name').value = '';
       updatePaymentDropdowns();
-      renderCardsList();
     }
 
-    function renderCardsList() {
+    function updatePaymentDropdowns() {
+      const sel = document.getElementById('tx-payment-method');
       const list = document.getElementById('cards-list');
+      sel.innerHTML = '<option value="Efectivo">Efectivo</option>';
       list.innerHTML = '<div class="p-2 border rounded-lg text-xs font-semibold">Efectivo</div>';
+
       customCards.forEach(c => {
+        sel.innerHTML += `<option value="${c.name}">${c.name} (${c.type})</option>`;
         list.innerHTML += `<div class="p-2 border rounded-lg text-xs font-semibold flex justify-between">
           <span>${c.name}</span> <span class="text-gray-400">${c.type}</span>
         </div>`;
       });
     }
 
-    function updatePaymentDropdowns() {
-      const sel = document.getElementById('tx-payment-method');
-      sel.innerHTML = '<option value="Efectivo">Efectivo</option>';
-      customCards.forEach(c => {
-        sel.innerHTML += `<option value="${c.name}">${c.name} (${c.type})</option>`;
-      });
-      renderCardsList();
-    }
-
     function openModal(type) {
       document.getElementById('tx-type').value = type;
       document.getElementById('modal-title').innerText = type === 'ingreso' ? 'Registrar Ingreso' : 'Registrar Gasto';
-      
       const catSel = document.getElementById('tx-category');
       catSel.innerHTML = '';
       CATEGORIES[type].forEach(c => catSel.innerHTML += `<option value="${c}">${c}</option>`);
-
       document.getElementById('msi-container').style.display = type === 'gasto' ? 'block' : 'none';
       document.getElementById('modal-transaction').classList.remove('hidden');
     }
