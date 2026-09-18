@@ -20,7 +20,7 @@
   <!-- PANTALLA DE AUTENTICACIÓN -->
   <div id="auth-screen" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md relative">
-      
+
       <!-- BOTÓN REGRESAR EN AUTH -->
       <button id="btn-back-auth" onclick="setAuthMode('login')" class="hidden text-xs font-semibold text-gray-500 hover:text-blue-600 mb-4 flex items-center gap-1">
         ← Regresar al inicio de sesión
@@ -46,6 +46,19 @@
           Iniciar Sesión
         </button>
       </form>
+
+      <!-- SEPARADOR -->
+      <div class="flex items-center gap-3 my-4">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <span class="text-xs text-gray-400">o</span>
+        <div class="flex-1 h-px bg-gray-200"></div>
+      </div>
+
+      <!-- LOGIN CON GITHUB -->
+      <button type="button" onclick="loginWithGitHub()" class="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        Continuar con GitHub
+      </button>
 
       <!-- OPCIONES -->
       <div id="auth-links" class="mt-4 text-center text-sm space-y-2">
@@ -173,7 +186,7 @@
   <!-- MODAL: REGISTRO DE GASTO / INGRESO -->
   <div id="modal-transaction" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md space-y-4">
-      
+
       <!-- BOTÓN REGRESAR / CERRAR MODAL -->
       <div class="flex justify-between items-center border-b pb-2">
         <button type="button" onclick="closeModal()" class="text-xs font-semibold text-gray-500 hover:text-gray-800">
@@ -236,7 +249,10 @@
   </div>
 
   <script>
-    // CONFIGURACIÓN DE SUPABASE
+    // ============================================================
+    // CONFIGURACIÓN DE SUPABASE — REEMPLAZA ESTOS DOS VALORES
+    // Los encuentras en tu proyecto: Settings > API
+    // ============================================================
     const SUPABASE_URL = "https://prvkyaceeviqyyfehxfy.supabase.co/rest/v1/"; // Sin /rest/v1
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydmt5YWNlZXZpcXl5ZmVoeGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzAwMDQsImV4cCI6MjEwNTMwNjAwNH0.coBp9PVYGlYdOryOcBzCjRO3omoNSZHz9rRXDD0TuIo"; // Tu clave eyJ...
 
@@ -255,10 +271,18 @@
       // Inicialización segura del cliente Supabase
       if (typeof supabase !== 'undefined') {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
           setSessionUser(session.user);
         }
+
+        // Captura la sesión apenas Supabase la resuelva (incluye el regreso de GitHub OAuth)
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+          if (session && !currentUser) {
+            setSessionUser(session.user);
+          }
+        });
       } else {
         alert('Error cargando la librería de Supabase. Revisa tu conexión.');
       }
@@ -266,11 +290,18 @@
       updatePaymentDropdowns();
     });
 
+    // Registro del Service Worker (PWA)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW error:', err));
+      });
+    }
+
     function setSessionUser(user) {
       currentUser = user;
       document.getElementById('auth-screen').classList.add('hidden');
       document.getElementById('app').classList.remove('hidden');
-      document.getElementById('user-display').innerText = user.email;
+      document.getElementById('user-display').innerText = user.email || user.user_metadata?.user_name || 'Usuario';
       loadTransactions();
     }
 
@@ -327,6 +358,14 @@
       } catch (err) {
         alert('Error: ' + err.message);
       }
+    }
+
+    async function loginWithGitHub() {
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo: window.location.origin + window.location.pathname }
+      });
+      if (error) alert('Error: ' + error.message);
     }
 
     async function logout() {
