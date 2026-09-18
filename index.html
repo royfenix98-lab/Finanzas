@@ -2,624 +2,509 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0d1117">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Finanzas Exprés & MSI</title>
-
-  <!-- PWA Manifest -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Financiero Familiar</title>
+  <!-- PWA Manifest & Colors -->
+  <meta name="theme-color" content="#2563eb">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2382/2382461.png">
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
+  <!-- Tailwind CSS & Supabase JS SDK -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root {
-      --bg-dark: #0d1117;
-      --card-bg: #161b22;
-      --border-color: #30363d;
-      --text-main: #f0f6fc;
-      --text-sub: #8b949e;
-      --primary: #1f6feb;
-      --income-green: #238636;
-      --expense-red: #da3633;
-      --accent-msi: #d29922;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .header {
-      padding: 16px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .header h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
-    .main-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      padding-bottom: 90px;
-    }
-
-    /* Cards UI */
-    .balance-card {
-      background: linear-gradient(135deg, #1f6feb 0%, #11428f 100%);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-
-    .balance-title {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.8);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .balance-amount {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin: 8px 0;
-    }
-
-    .balance-stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.7);
-    }
-
-    .stat-val {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .stat-val.income { color: #7ee787; }
-    .stat-val.expense { color: #ff7b72; }
-
-    .msi-banner {
-      background: rgba(210, 153, 34, 0.1);
-      border: 1px solid var(--accent-msi);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .msi-info h4 {
-      color: var(--accent-msi);
-      font-size: 0.9rem;
-    }
-
-    .msi-info p {
-      font-size: 0.75rem;
-      color: var(--text-sub);
-    }
-
-    .quick-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .btn-quick {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 14px;
-      border-radius: 12px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .section-title {
-      font-size: 0.95rem;
-      color: var(--text-sub);
-      margin-bottom: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .tx-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .tx-item {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      padding: 12px 16px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .tx-details {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .tx-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .tx-icon.expense { background: rgba(218, 54, 51, 0.15); color: #f85149; }
-    .tx-icon.income { background: rgba(35, 134, 54, 0.15); color: #3fb950; }
-    .tx-icon.msi { background: rgba(210, 153, 34, 0.15); color: #d29922; }
-
-    .tx-title { font-weight: 600; font-size: 0.95rem; }
-    .tx-sub { font-size: 0.75rem; color: var(--text-sub); }
-
-    .tx-amount { font-weight: 700; font-size: 1rem; }
-    .tx-amount.expense { color: #f85149; }
-    .tx-amount.income { color: #3fb950; }
-
-    /* Bottom Nav */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--card-bg);
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: var(--text-sub);
-      font-size: 0.7rem;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .nav-item.active { color: var(--primary); }
-
-    /* FAB Button */
-    .fab {
-      position: fixed;
-      bottom: 25px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
-      border-radius: 28px;
-      background: var(--primary);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 16px rgba(31, 111, 235, 0.5);
-      border: none;
-      cursor: pointer;
-      z-index: 100;
-    }
-
-    /* Modal Keypad */
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(8px);
-      z-index: 200;
-      display: none;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
-
-    .modal.open { display: flex; }
-
-    .modal-content {
-      background: var(--card-bg);
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      padding: 24px;
-      border-top: 1px solid var(--border-color);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .type-toggle {
-      display: flex;
-      background: var(--bg-dark);
-      border-radius: 12px;
-      padding: 4px;
-      margin-bottom: 16px;
-    }
-
-    .toggle-btn {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      color: var(--text-sub);
-    }
-
-    .toggle-btn.active-expense { background: var(--expense-red); color: white; }
-    .toggle-btn.active-income { background: var(--income-green); color: white; }
-    .toggle-btn.active-msi { background: var(--accent-msi); color: white; }
-
-    .keypad-display {
-      font-size: 2.8rem;
-      font-weight: 800;
-      text-align: right;
-      padding: 12px 0;
-      margin-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      background: var(--bg-dark);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      color: var(--text-main);
-      margin-bottom: 12px;
-      font-size: 1rem;
-    }
-
-    .keypad-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .key-btn {
-      background: var(--bg-dark);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      font-weight: 600;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    .key-btn:active { background: var(--border-color); }
-
-    .save-btn {
-      width: 100%;
-      background: var(--primary);
-      color: white;
-      padding: 16px;
-      border-radius: 12px;
-      border: none;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
+    body { -webkit-tap-highlight-color: transparent; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 font-sans pb-20 antialiased">
 
-  <div class="header">
-    <h1>Control Financiero PWA</h1>
-    <i data-lucide="bell" style="color: var(--text-sub); width:20px;"></i>
-  </div>
+  <!-- PANTALLA DE AUTENTICACIÓN (LOGIN / REGISTRO / RECUPERACIÓN) -->
+  <div id="auth-screen" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Control Financiero</h1>
+        <p class="text-sm text-gray-500" id="auth-subtitle">Inicia sesión en tu cuenta</p>
+      </div>
 
-  <div class="main-content">
-    
-    <!-- Balance Header Card -->
-    <div class="balance-card">
-      <div class="balance-title">Disponible Real</div>
-      <div class="balance-amount" id="totalBalance">$0.00</div>
-      <div class="balance-stats">
-        <div class="stat-item">
-          <span class="stat-label">Ingresos Mes</span>
-          <span class="stat-val income" id="monthIncome">+$0.00</span>
+      <!-- FORMULARIO AUTENTICACIÓN -->
+      <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+          <input type="email" id="auth-email" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
         </div>
-        <div class="stat-item">
-          <span class="stat-label">Gastos + MSI</span>
-          <span class="stat-val expense" id="monthExpense">-$0.00</span>
+        <div id="password-group">
+          <label class="block text-sm font-medium text-gray-700">Contraseña</label>
+          <input type="password" id="auth-password" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <button type="submit" id="auth-btn-submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <!-- BOTONES DE NAVEGACIÓN DE AUTENTICACIÓN -->
+      <div class="mt-4 text-center text-sm space-y-2">
+        <button id="toggle-auth-mode-btn" onclick="toggleAuthMode()" class="text-blue-600 hover:underline">
+          ¿No tienes cuenta? Regístrate
+        </button>
+        <br>
+        <button id="toggle-reset-btn" onclick="toggleResetMode()" class="text-gray-500 hover:underline">
+          ¿Olvidaste tu contraseña?
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APLICACIÓN PRINCIPAL (OCULTA HASTA AUTENTICARSE) -->
+  <div id="app" class="hidden">
+    <!-- ENCABEZADO -->
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-30 flex justify-between items-center">
+      <div>
+        <h1 class="font-bold text-lg leading-tight">Mis Finanzas</h1>
+        <p class="text-xs text-blue-100" id="user-display">Usuario</p>
+      </div>
+      <button onclick="logout()" class="text-xs bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition">
+        Cerrar Sesión
+      </button>
+    </header>
+
+    <!-- NAVEGACIÓN POR PESTAÑAS -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
+
+      <!-- PESTAÑA: REGISTRO / MOVIMIENTOS -->
+      <div id="tab-registro" class="tab-content space-y-4">
+        <!-- Tarjeta de Saldo General -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Balance del Mes Actual</p>
+            <p id="total-balance" class="text-2xl font-bold text-gray-900">$0.00</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-green-600 font-medium">Ingresos: <span id="total-income">$0</span></p>
+            <p class="text-xs text-red-500 font-medium">Gastos: <span id="total-expense">$0</span></p>
+          </div>
+        </div>
+
+        <!-- Botones de Acción Rápida -->
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="openModal('ingreso')" class="bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-sm transition flex justify-center items-center gap-2">
+            <span>+</span> Agregar Ingreso
+          </button>
+          <button onclick="openModal('gasto')" class="bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl font-bold shadow-sm transition flex justify-center items-center gap-2">
+            <span>-</span> Agregar Gasto
+          </button>
+        </div>
+
+        <!-- Lista de Movimientos Recientes -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h2 class="font-bold text-gray-800 text-sm mb-3">Movimientos Recientes</h2>
+          <div id="transactions-list" class="space-y-3">
+            <p class="text-xs text-gray-400 text-center py-4">Cargando datos...</p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Active MSI Banner -->
-    <div class="msi-banner">
-      <div class="msi-info">
-        <h4>Compromisos a MSI</h4>
-        <p id="msiSummary">Cuotas activas este mes</p>
+      <!-- PESTAÑA: RESUMEN MENSUAL Y PROYECCIÓN -->
+      <div id="tab-resumen" class="tab-content hidden space-y-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-gray-800">Resumen Mensual</h2>
+            <select id="select-month" onchange="renderSummary()" class="text-sm border border-gray-300 rounded-lg p-1">
+              <!-- Opciones generadas por JS -->
+            </select>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between border-b pb-2 text-sm">
+              <span class="text-gray-600">Ingresos Registrados:</span>
+              <span id="summary-income" class="font-bold text-green-600">$0.00</span>
+            </div>
+            <div class="flex justify-between border-b pb-2 text-sm">
+              <span class="text-gray-600">Gastos Corrientes:</span>
+              <span id="summary-direct-expenses" class="font-bold text-red-500">$0.00</span>
+            </div>
+            <div class="flex justify-between border-b pb-2 text-sm">
+              <span class="text-gray-600">Cuotas de Meses Sin Intereses:</span>
+              <span id="summary-msi-expenses" class="font-bold text-amber-600">$0.00</span>
+            </div>
+            <div class="flex justify-between pt-1 text-base font-bold">
+              <span>Balance Neto:</span>
+              <span id="summary-net-balance">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desglose MSI Activos -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h3 class="font-bold text-gray-800 text-sm mb-3">Compras a Meses Activas</h3>
+          <div id="msi-list" class="space-y-2">
+            <p class="text-xs text-gray-400 text-center py-2">No hay cargos a meses registrados.</p>
+          </div>
+        </div>
       </div>
-      <i data-lucide="credit-card" style="color: var(--accent-msi)"></i>
-    </div>
 
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <button class="btn-quick" onclick="openModal('GASTO')">
-        <i data-lucide="arrow-up-right" style="color: #f85149"></i> Gasto
+      <!-- PESTAÑA: TARJETAS Y MÉTODOS DE PAGO -->
+      <div id="tab-tarjetas" class="tab-content hidden space-y-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h2 class="font-bold text-gray-800 text-sm mb-3">Agregar Tarjeta</h2>
+          <form onsubmit="addCard(event)" class="space-y-3">
+            <input type="text" id="card-name" placeholder="Nombre (Ej. BBVA Azul, Nu)" required class="w-full text-sm border p-2 rounded-lg">
+            <select id="card-type" class="w-full text-sm border p-2 rounded-lg">
+              <option value="Credito">Tarjeta de Crédito</option>
+              <option value="Debito">Tarjeta de Débito</option>
+            </select>
+            <button type="submit" class="w-full bg-blue-600 text-white text-sm py-2 rounded-lg font-semibold">Guardar Tarjeta</button>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h3 class="font-bold text-gray-800 text-sm mb-3">Tus Tarjetas</h3>
+          <div id="cards-list" class="space-y-2">
+            <p class="text-xs text-gray-400 text-center py-2">Solo Efectivo registrado por defecto.</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- BARRA INFERIOR DE NAVEGACIÓN -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-30">
+      <button onclick="switchTab('registro')" class="text-center text-blue-600 font-medium text-xs flex flex-col items-center">
+        <span>📝</span> Movimientos
       </button>
-      <button class="btn-quick" onclick="openModal('INGRESO')">
-        <i data-lucide="arrow-down-left" style="color: #3fb950"></i> Ingreso
+      <button onclick="switchTab('resumen')" class="text-center text-gray-500 font-medium text-xs flex flex-col items-center">
+        <span>📊</span> Resumen
       </button>
-    </div>
-
-    <!-- Recent Transactions -->
-    <div class="section-title">Movimientos Recientes</div>
-    <div class="tx-list" id="txContainer">
-      <!-- Items populated by JS -->
-    </div>
-
+      <button onclick="switchTab('tarjetas')" class="text-center text-gray-500 font-medium text-xs flex flex-col items-center">
+        <span>💳</span> Tarjetas
+      </button>
+    </nav>
   </div>
 
-  <!-- Bottom Navigation -->
-  <div class="bottom-nav">
-    <div class="nav-item active">
-      <i data-lucide="home"></i>
-      <span>Inicio</span>
-    </div>
-    <div class="nav-item">
-      <i data-lucide="calendar"></i>
-      <span>MSI</span>
-    </div>
-    <div class="nav-item">
-      <i data-lucide="pie-chart"></i>
-      <span>Reportes</span>
-    </div>
-  </div>
+  <!-- MODAL: REGISTRO DE MOVIMIENTO (GASTO O INGRESO) -->
+  <div id="modal-transaction" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md space-y-4">
+      <h3 id="modal-title" class="font-bold text-lg text-gray-800">Registrar Movimiento</h3>
 
-  <!-- Floating Add Button -->
-  <button class="fab" onclick="openModal('GASTO')">
-    <i data-lucide="plus" style="width: 28px; height: 28px;"></i>
-  </button>
+      <form onsubmit="saveTransaction(event)" class="space-y-3">
+        <input type="hidden" id="tx-type" value="gasto">
 
-  <!-- Captura / Keypad Modal -->
-  <div class="modal" id="txModal">
-    <div class="modal-content">
-      
-      <div class="type-toggle">
-        <div class="toggle-btn active-expense" id="btnTypeExpense" onclick="setType('GASTO')">Gasto</div>
-        <div class="toggle-btn" id="btnTypeIncome" onclick="setType('INGRESO')">Ingreso</div>
-        <div class="toggle-btn" id="btnTypeMSI" onclick="setType('MSI')">MSI</div>
-      </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Concepto</label>
+          <input type="text" id="tx-concept" placeholder="Ej. Despensa, Sueldo, Gasolina" required class="w-full border p-2 rounded-lg text-sm">
+        </div>
 
-      <div class="keypad-display" id="displayAmount">$0</div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Monto Total ($)</label>
+          <input type="number" step="0.01" id="tx-amount" placeholder="0.00" required class="w-full border p-2 rounded-lg text-sm">
+        </div>
 
-      <input type="text" class="input-field" id="txConcept" placeholder="Concepto (ej. Supermercado, Nomina)">
-      
-      <select class="input-field" id="txCategory">
-        <option value="Comida">Comida / Super</option>
-        <option value="Transporte">Transporte / Gasolina</option>
-        <option value="Sueldo">Sueldo / Nómina</option>
-        <option value="Servicios">Servicios / Casa</option>
-        <option value="Otros">Otros</option>
-      </select>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Categoría</label>
+          <select id="tx-category" class="w-full border p-2 rounded-lg text-sm">
+            <!-- Dinámico según tipo -->
+          </select>
+        </div>
 
-      <div id="msiOptions" style="display: none;">
-        <label style="font-size: 0.8rem; color: var(--text-sub);">Plazo en Meses:</label>
-        <select class="input-field" id="txMonths">
-          <option value="3">3 Meses Sin Intereses</option>
-          <option value="6">6 Meses Sin Intereses</option>
-          <option value="12" selected>12 Meses Sin Intereses</option>
-          <option value="18">18 Meses Sin Intereses</option>
-        </select>
-      </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Método de Pago</label>
+          <select id="tx-payment-method" class="w-full border p-2 rounded-lg text-sm">
+            <option value="Efectivo">Efectivo</option>
+          </select>
+        </div>
 
-      <div class="keypad-grid">
-        <button class="key-btn" onclick="pressKey('1')">1</button>
-        <button class="key-btn" onclick="pressKey('2')">2</button>
-        <button class="key-btn" onclick="pressKey('3')">3</button>
-        <button class="key-btn" onclick="pressKey('4')">4</button>
-        <button class="key-btn" onclick="pressKey('5')">5</button>
-        <button class="key-btn" onclick="pressKey('6')">6</button>
-        <button class="key-btn" onclick="pressKey('7')">7</button>
-        <button class="key-btn" onclick="pressKey('8')">8</button>
-        <button class="key-btn" onclick="pressKey('9')">9</button>
-        <button class="key-btn" onclick="pressKey('.')">.</button>
-        <button class="key-btn" onclick="pressKey('0')">0</button>
-        <button class="key-btn" onclick="pressKey('DEL')">⌫</button>
-      </div>
+        <!-- OPCIONES MESES SIN INTERESES (SOLO GASTOS) -->
+        <div id="msi-container" class="space-y-2 border-t pt-2">
+          <label class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+            <input type="checkbox" id="tx-is-msi" onchange="toggleMSIOptions()"> ¿Es una compra a Meses Sin Intereses (MSI)?
+          </label>
 
-      <button class="save-btn" onclick="saveTransaction()">Guardar Movimiento</button>
+          <div id="msi-details" class="hidden space-y-2 pl-4">
+            <div>
+              <label class="block text-xs text-gray-500">Plazo Total en Meses</label>
+              <select id="tx-msi-months" class="w-full border p-1.5 rounded-lg text-sm">
+                <option value="3">3 Meses</option>
+                <option value="6">6 Meses</option>
+                <option value="9">9 Meses</option>
+                <option value="12">12 Meses</option>
+                <option value="18">18 Meses</option>
+                <option value="24">24 Meses</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500">¿Inició en meses pasados? (Pagos ya realizados)</label>
+              <input type="number" id="tx-msi-past" value="0" min="0" class="w-full border p-1.5 rounded-lg text-sm" placeholder="Ej. 2 cuotas pagadas">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeModal()" class="w-1/2 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-semibold">Cancelar</button>
+          <button type="submit" class="w-1/2 bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold">Guardar</button>
+        </div>
+      </form>
     </div>
   </div>
 
+  <!-- SCRIPT LOGIC -->
   <script>
-    // App State
-    let currentType = 'GASTO';
-    let currentInput = '0';
-    let transactions = JSON.parse(localStorage.getItem('fin_txs')) || [
-      { id: 1, type: 'INGRESO', concept: 'Pago Nómina', amount: 25000, category: 'Sueldo', date: '2026-09-15' },
-      { id: 2, type: 'GASTO', concept: 'Supermercado', amount: 1450, category: 'Comida', date: '2026-09-16' },
-      { id: 3, type: 'MSI', concept: 'Laptop Oficina', amount: 12000, months: 12, monthly: 1000, category: 'Otros', date: '2026-09-01' }
-    ];
+    // -------------------------------------------------------------
+    // 1. CONFIGURACIÓN DE SUPABASE (REEMPLAZAR CON TUS CLAVES REALES)
+    // -------------------------------------------------------------
+    const SUPABASE_URL = "https://prvkyaceeviqyyfehxfy.supabase.co/rest/v1/";
+    const SUPABASE_ANON_KEY = "sb_publishable_uMTVgpopWl1qpEovXC41VA_Hi6cKXIo";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      lucide.createIcons();
-      updateUI();
-      registerSW();
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Estado Local
+    let currentUser = null;
+    let authState = 'login'; // 'login', 'signup', 'reset'
+    let transactions = [];
+    let customCards = JSON.parse(localStorage.getItem('cards') || '[]');
+
+    const CATEGORIES = {
+      gasto: ['Comida/Super', 'Transporte/Gasolina', 'Servicios/Casa', 'Entretenimiento', 'Salud/Medicina', 'Educación', 'Ropa/Personal', 'Suscripciones', 'Otros'],
+      ingreso: ['Sueldo/Nómina', 'Ventas/Negocio', 'Inversiones/Rendimientos', 'Freelance/Trabajo Extra', 'Transferencia', 'Regalo/Premio', 'Otros']
+    };
+
+    // -------------------------------------------------------------
+    // 2. INICIALIZACIÓN Y CONTROL DE AUTENTICACIÓN
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        setSessionUser(session.user);
+      }
+      populateMonthDropdown();
+      updatePaymentDropdowns();
     });
 
-    function registerSW() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration error:', err));
+    function setSessionUser(user) {
+      currentUser = user;
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('user-display').innerText = user.email;
+      loadTransactions();
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+
+      try {
+        if (authState === 'login') {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          setSessionUser(data.user);
+        } else if (authState === 'signup') {
+          const { data, error } = await supabaseClient.auth.signUp({ email, password });
+          if (error) throw error;
+          alert('Cuenta creada exitosamente.');
+          if (data.user) setSessionUser(data.user);
+        } else if (authState === 'reset') {
+          const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+          if (error) throw error;
+          alert('Se ha enviado un correo de recuperación.');
+          toggleAuthMode('login');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
       }
+    }
+
+    function toggleAuthMode() {
+      authState = (authState === 'login') ? 'signup' : 'login';
+      document.getElementById('auth-subtitle').innerText = authState === 'signup' ? 'Crea una cuenta nueva' : 'Inicia sesión en tu cuenta';
+      document.getElementById('auth-btn-submit').innerText = authState === 'signup' ? 'Registrarse' : 'Iniciar Sesión';
+      document.getElementById('toggle-auth-mode-btn').innerText = authState === 'signup' ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
+      document.getElementById('password-group').classList.remove('hidden');
+    }
+
+    function toggleResetMode() {
+      authState = 'reset';
+      document.getElementById('auth-subtitle').innerText = 'Recuperar Contraseña';
+      document.getElementById('auth-btn-submit').innerText = 'Enviar Enlace';
+      document.getElementById('password-group').classList.add('hidden');
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      location.reload();
+    }
+
+    // -------------------------------------------------------------
+    // 3. CARGA Y GUARDADO DE DATOS (SUPABASE)
+    // -------------------------------------------------------------
+    async function loadTransactions() {
+      const { data, error } = await supabaseClient
+        .from('movimientos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error al cargar movimientos:", error);
+        return;
+      }
+
+      transactions = data || [];
+      renderUI();
+    }
+
+    async function saveTransaction(e) {
+      e.preventDefault();
+      const type = document.getElementById('tx-type').value;
+      const concept = document.getElementById('tx-concept').value;
+      const amount = parseFloat(document.getElementById('tx-amount').value);
+      const category = document.getElementById('tx-category').value;
+      const method = document.getElementById('tx-payment-method').value;
+      const isMSI = document.getElementById('tx-is-msi').checked;
+      const months = isMSI ? parseInt(document.getElementById('tx-msi-months').value) : 1;
+
+      const payload = {
+        id: Date.now(),
+        usuario_id: currentUser.id,
+        tipo: type,
+        concepto: concept,
+        monto: amount,
+        categoria: category,
+        metodo_pago: method,
+        meses_msi: months
+      };
+
+      const { error } = await supabaseClient.from('movimientos').insert([payload]);
+      if (error) {
+        alert('Error al guardar: ' + error.message);
+        return;
+      }
+
+      closeModal();
+      loadTransactions();
+    }
+
+    // -------------------------------------------------------------
+    // 4. INTERFAZ Y RENDERIZADO
+    // -------------------------------------------------------------
+    function renderUI() {
+      const list = document.getElementById('transactions-list');
+      list.innerHTML = '';
+
+      let inc = 0, exp = 0;
+
+      transactions.forEach(t => {
+        if (t.tipo === 'ingreso') inc += parseFloat(t.monto);
+        if (t.tipo === 'gasto') exp += parseFloat(t.monto);
+
+        const el = document.createElement('div');
+        el.className = 'flex justify-between items-center p-2.5 bg-gray-50 rounded-xl text-xs';
+        el.innerHTML = `
+          <div>
+            <p class="font-bold text-gray-800">${t.concepto}</p>
+            <p class="text-gray-400">${t.categoria} • ${t.metodo_pago} ${t.meses_msi > 1 ? '('+t.meses_msi+' MSI)' : ''}</p>
+          </div>
+          <p class="font-bold ${t.tipo === 'ingreso' ? 'text-green-600' : 'text-red-500'}">
+            ${t.tipo === 'ingreso' ? '+' : '-'}$${parseFloat(t.monto).toFixed(2)}
+          </p>
+        `;
+        list.appendChild(el);
+      });
+
+      document.getElementById('total-income').innerText = `$${inc.toFixed(2)}`;
+      document.getElementById('total-expense').innerText = `$${exp.toFixed(2)}`;
+      document.getElementById('total-balance').innerText = `$${(inc - exp).toFixed(2)}`;
+
+      renderSummary();
+    }
+
+    function renderSummary() {
+      const monthIndex = parseInt(document.getElementById('select-month').value || '0');
+      let inc = 0, directExp = 0, msiExp = 0;
+
+      transactions.forEach(t => {
+        if (t.tipo === 'ingreso') inc += parseFloat(t.monto);
+        if (t.tipo === 'gasto') {
+          if (t.meses_msi > 1) {
+            msiExp += (parseFloat(t.monto) / t.meses_msi);
+          } else {
+            directExp += parseFloat(t.monto);
+          }
+        }
+      });
+
+      document.getElementById('summary-income').innerText = `$${inc.toFixed(2)}`;
+      document.getElementById('summary-direct-expenses').innerText = `$${directExp.toFixed(2)}`;
+      document.getElementById('summary-msi-expenses').innerText = `$${msiExp.toFixed(2)}`;
+      document.getElementById('summary-net-balance').innerText = `$${(inc - directExp - msiExp).toFixed(2)}`;
+    }
+
+    // -------------------------------------------------------------
+    // 5. TARJETAS Y MODALES
+    // -------------------------------------------------------------
+    function addCard(e) {
+      e.preventDefault();
+      const name = document.getElementById('card-name').value;
+      const type = document.getElementById('card-type').value;
+
+      customCards.push({ name, type });
+      localStorage.setItem('cards', JSON.stringify(customCards));
+      document.getElementById('card-name').value = '';
+      updatePaymentDropdowns();
+      renderCardsList();
+    }
+
+    function renderCardsList() {
+      const list = document.getElementById('cards-list');
+      list.innerHTML = '<div class="p-2 border rounded-lg text-xs font-semibold">Efectivo</div>';
+      customCards.forEach(c => {
+        list.innerHTML += `<div class="p-2 border rounded-lg text-xs font-semibold flex justify-between">
+          <span>${c.name}</span> <span class="text-gray-400">${c.type}</span>
+        </div>`;
+      });
+    }
+
+    function updatePaymentDropdowns() {
+      const sel = document.getElementById('tx-payment-method');
+      sel.innerHTML = '<option value="Efectivo">Efectivo</option>';
+      customCards.forEach(c => {
+        sel.innerHTML += `<option value="${c.name}">${c.name} (${c.type})</option>`;
+      });
+      renderCardsList();
     }
 
     function openModal(type) {
-      currentInput = '0';
-      setType(type);
-      document.getElementById('txConcept').value = '';
-      document.getElementById('txModal').classList.add('open');
+      document.getElementById('tx-type').value = type;
+      document.getElementById('modal-title').innerText = type === 'ingreso' ? 'Registrar Ingreso' : 'Registrar Gasto';
+      
+      const catSel = document.getElementById('tx-category');
+      catSel.innerHTML = '';
+      CATEGORIES[type].forEach(c => catSel.innerHTML += `<option value="${c}">${c}</option>`);
+
+      document.getElementById('msi-container').style.display = type === 'gasto' ? 'block' : 'none';
+      document.getElementById('modal-transaction').classList.remove('hidden');
     }
 
     function closeModal() {
-      document.getElementById('txModal').classList.remove('open');
+      document.getElementById('modal-transaction').classList.add('hidden');
     }
 
-    function setType(type) {
-      currentType = type;
-      document.getElementById('btnTypeExpense').className = 'toggle-btn' + (type==='GASTO'?' active-expense':'');
-      document.getElementById('btnTypeIncome').className = 'toggle-btn' + (type==='INGRESO'?' active-income':'');
-      document.getElementById('btnTypeMSI').className = 'toggle-btn' + (type==='MSI'?' active-msi':'');
-      
-      document.getElementById('msiOptions').style.display = type === 'MSI' ? 'block' : 'none';
-      updateDisplay();
+    function toggleMSIOptions() {
+      const check = document.getElementById('tx-is-msi').checked;
+      document.getElementById('msi-details').classList.toggle('hidden', !check);
     }
 
-    function pressKey(val) {
-      if (val === 'DEL') {
-        currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
-      } else if (val === '.') {
-        if (!currentInput.includes('.')) currentInput += '.';
-      } else {
-        currentInput = currentInput === '0' ? val : currentInput + val;
-      }
-      updateDisplay();
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
     }
 
-    function updateDisplay() {
-      document.getElementById('displayAmount').innerText = '$' + currentInput;
-    }
-
-    function saveTransaction() {
-      const amount = parseFloat(currentInput);
-      const concept = document.getElementById('txConcept').value || (currentType === 'INGRESO' ? 'Ingreso Varios' : 'Gasto Varios');
-      const category = document.getElementById('txCategory').value;
-
-      if (!amount || amount <= 0) return alert('Ingresa un monto válido');
-
-      const newTx = {
-        id: Date.now(),
-        type: currentType,
-        concept,
-        amount,
-        category,
-        date: new Date().toISOString().split('T')[0]
-      };
-
-      if (currentType === 'MSI') {
-        newTx.months = parseInt(document.getElementById('txMonths').value);
-        newTx.monthly = amount / newTx.months;
-      }
-
-      transactions.unshift(newTx);
-      localStorage.setItem('fin_txs', JSON.stringify(transactions));
-      
-      closeModal();
-      updateUI();
-    }
-
-    function updateUI() {
-      let totalIncome = 0;
-      let totalExpense = 0;
-      let msiMonthlyTotal = 0;
-
-      const txContainer = document.getElementById('txContainer');
-      txContainer.innerHTML = '';
-
-      transactions.forEach(tx => {
-        if (tx.type === 'INGRESO') totalIncome += tx.amount;
-        if (tx.type === 'GASTO') totalExpense += tx.amount;
-        if (tx.type === 'MSI') {
-          msiMonthlyTotal += tx.monthly;
-          totalExpense += tx.monthly; // Impacto mensual del MSI
-        }
-
-        // Render Tx Item
-        const item = document.createElement('div');
-        item.className = 'tx-item';
-        
-        let iconName = tx.type === 'INGRESO' ? 'arrow-down-left' : (tx.type === 'MSI' ? 'credit-card' : 'arrow-up-right');
-        let typeClass = tx.type.toLowerCase();
-
-        item.innerHTML = `
-          <div class="tx-details">
-            <div class="tx-icon ${typeClass}">
-              <i data-lucide="${iconName}"></i>
-            </div>
-            <div>
-              <div class="tx-title">${tx.concept}</div>
-              <div class="tx-sub">${tx.category} • ${tx.date} ${tx.type === 'MSI' ? `(${tx.months} MSI)` : ''}</div>
-            </div>
-          </div>
-          <div class="tx-amount ${typeClass}">
-            ${tx.type === 'INGRESO' ? '+' : '-'}$${(tx.type === 'MSI' ? tx.monthly : tx.amount).toLocaleString()}
-          </div>
-        `;
-        txContainer.appendChild(item);
+    function populateMonthDropdown() {
+      const sel = document.getElementById('select-month');
+      const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const current = new Date().getMonth();
+      sel.innerHTML = '';
+      months.forEach((m, idx) => {
+        sel.innerHTML += `<option value="${idx}" ${idx === current ? 'selected' : ''}>${m}</option>`;
       });
-
-      document.getElementById('totalBalance').innerText = '$' + (totalIncome - totalExpense).toLocaleString('es-MX', {minimumFractionDigits: 2});
-      document.getElementById('monthIncome').innerText = '+$' + totalIncome.toLocaleString();
-      document.getElementById('monthExpense').innerText = '-$' + totalExpense.toLocaleString();
-      document.getElementById('msiSummary').innerText = `Mensualidad total MSI: $${msiMonthlyTotal.toLocaleString()}/mes`;
-
-      lucide.createIcons();
-    }
-
-    // Modal Close Outside Click
-    window.onclick = function(event) {
-      const modal = document.getElementById('txModal');
-      if (event.target == modal) closeModal();
     }
   </script>
 </body>
